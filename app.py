@@ -189,9 +189,12 @@ if "logged_in" not in st.session_state:
 
 # Lista fixa de motivos - Mantido igual
 MOTIVOS = [
-    "Insatisfação", "Mudança de endereço", "Inviabilidade", 
-    "Cancelamento Chip", "Cancelamento TV", "Cancelamento Câmera", 
-    "Problemas financeiros", "Revertido", "Outros"
+    "Insatisfação", 
+    "Mudança de endereço", 
+    "Inviabilidade", 
+    "Problemas financeiros", 
+    "Revertido", 
+    "Outros"
 ]
 
 # ---------------------------------------------------------

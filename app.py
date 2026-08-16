@@ -109,7 +109,7 @@ if not st.session_state.logged_in:
         except FileNotFoundError:
             return ""
 
-    nome_da_imagem = "Background sistema retenção.png" 
+    nome_da_imagem = "background.png" 
     img_base64 = get_base64_of_bin_file(nome_da_imagem)
 
     st.markdown(f"""

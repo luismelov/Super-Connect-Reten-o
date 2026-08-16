@@ -34,8 +34,9 @@ st.markdown("""
 # ---------------------------------------------------------
 # GERENCIADOR DE COOKIES (MEMÓRIA DE 2 HORAS)
 # ---------------------------------------------------------
-cookie_manager = stx.CookieManager()
-
+if "cookie_manager" not in st.session_state:
+    st.session_state.cookie_manager = stx.CookieManager()
+cookie_manager = st.session_state.cookie_manager
 # ---------------------------------------------------------
 # INICIALIZAÇÃO DO BANCO DE DADOS (SUPABASE NA NUVEM)
 # ---------------------------------------------------------
@@ -203,10 +204,26 @@ with st.sidebar:
         icones_menu = ["headset", "grid"]
 
     menu = option_menu(
-        menu_title=None, options=opcoes_menu, icons=icones_menu, default_index=0,
+        menu_title=None, 
+        options=opcoes_menu, 
+        icons=icones_menu, 
+        default_index=0,
+        key="menu_lateral",
         styles={
-            "container": { "padding": "0!important", "border": "none" },
-            "nav-link": { "font-family": "'Bebas Neue', sans-serif", "font-size": "18px", "text-align": "left", "margin": "8px 0px", "transition": "all 0.3s ease" }
+            "container": { "padding": "0!important", "border": "none", "background-color": "transparent" },
+            "icon": { "font-size": "18px", "color": "var(--text-color)" },
+            "nav-link": { 
+                "font-family": "'Bebas Neue', sans-serif", 
+                "font-size": "18px", 
+                "text-align": "left", 
+                "margin": "8px 0px", 
+                "color": "var(--text-color)",
+                "transition": "all 0.3s ease" 
+            },
+            "nav-link-selected": { 
+                "background-color": "rgba(128, 128, 128, 0.2)", 
+                "color": "var(--text-color)" 
+            }
         }
     )
     st.divider()

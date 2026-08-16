@@ -211,18 +211,11 @@ with st.sidebar:
         key="menu_lateral",
         styles={
             "container": { "padding": "0!important", "border": "none", "background-color": "transparent" },
-            "icon": { "font-size": "18px", "color": "var(--text-color)" },
             "nav-link": { 
                 "font-family": "'Bebas Neue', sans-serif", 
                 "font-size": "18px", 
                 "text-align": "left", 
-                "margin": "8px 0px", 
-                "color": "var(--text-color)",
-                "transition": "all 0.3s ease" 
-            },
-            "nav-link-selected": { 
-                "background-color": "rgba(128, 128, 128, 0.2)", 
-                "color": "var(--text-color)" 
+                "margin": "8px 0px"
             }
         }
     )

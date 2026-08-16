@@ -12,6 +12,18 @@ st.set_page_config(page_title="Super Connect | Retenção", layout="wide", page_
 st.markdown("""
     <style>
     /* ==========================================
+    /* Força o fundo das caixas de input e select a ficar cinza escuro */
+    div[data-baseweb="input"] > div, 
+    div[data-baseweb="select"] > div {
+        background-color: #262730 !important;
+    }
+    
+    /* Garante que o texto digitado e selecionado ficará visível e branco */
+    div[data-baseweb="input"] input, 
+    div[data-baseweb="select"] div,
+    div[data-baseweb="select"] span {
+        color: #ffffff !important;
+    }
        REMOVER LIMITADORES DO MENU (CORREÇÃO DEFINITIVA 3.0)
        ========================================== */
     /* 1. MATA O SVG DE TELA CHEIA: Como o seu menu roda dentro de um iframe seguro, ocultar os SVGs da barra lateral apaga os cantinhos nativos sem afetar os ícones do seu menu! */

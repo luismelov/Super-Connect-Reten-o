@@ -3,4 +3,3 @@ streamlit-option-menu
 pandas
 altair
 supabase
-extra-streamlit-components

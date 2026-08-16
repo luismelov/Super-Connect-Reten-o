@@ -12,11 +12,6 @@ st.set_page_config(page_title="Super Connect | Retenção", layout="wide", page_
 st.markdown("""
     <style>
     /* ==========================================
-    /* Força o fundo das caixas de input e select a ficar cinza escuro */
-    div[data-baseweb="input"] > div, 
-    div[data-baseweb="select"] > div {
-        background-color: #262730 !important;
-    }
     
     /* Garante que o texto digitado e selecionado ficará visível e branco */
     div[data-baseweb="input"] input, 

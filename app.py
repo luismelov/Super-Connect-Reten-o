@@ -1163,6 +1163,13 @@ elif menu == "Relatórios":
     df = st.session_state.atendimentos
     
     if not df.empty:
+        # --- TRAVA DE SEGURANÇA PARA DADOS ANTIGOS ---
+        # Cria a coluna com "Não Informado" caso ela ainda não exista nos primeiros atendimentos
+        if "tipo_cancelamento" not in df.columns:
+            df["tipo_cancelamento"] = "Não Informado"
+        else:
+            df["tipo_cancelamento"] = df["tipo_cancelamento"].fillna("Não Informado")
+
         # 1. PAINEL DE FILTROS COM MÚLTIPLAS COLUNAS E LIMPEZA
         with st.expander("🔍 Filtros de Busca", expanded=True):
             
@@ -1173,6 +1180,7 @@ elif menu == "Relatórios":
                 st.session_state.f_plano = []
                 st.session_state.f_motivo = []
                 st.session_state.f_cidade = []
+                st.session_state.f_tipo = [] # <-- ADICIONADO AQUI
                 # Remove a data para forçar ela a voltar ao valor padrão
                 if 'f_data' in st.session_state:
                     del st.session_state['f_data']
@@ -1213,6 +1221,9 @@ elif menu == "Relatórios":
                 ]
                 filtro_plano = st.multiselect("Plano Cancelado", options=lista_planos_full, key='f_plano')
                 
+                # <-- NOVO FILTRO NA INTERFACE AQUI -->
+                filtro_tipo = st.multiselect("Tipo de Cancelamento", options=["Total", "Parcial", "Não Informado"], key='f_tipo')
+                
             with col_f3:
                 filtro_motivo = st.multiselect("Motivo Principal", options=MOTIVOS, key='f_motivo')
                 
@@ -1231,6 +1242,7 @@ elif menu == "Relatórios":
         if filtro_plano: df_filtrado = df_filtrado[df_filtrado['Plano Cancelado'].isin(filtro_plano)]
         if filtro_motivo: df_filtrado = df_filtrado[df_filtrado['Motivo'].isin(filtro_motivo)]
         if filtro_cidade: df_filtrado = df_filtrado[df_filtrado['Cidade'].isin(filtro_cidade)]
+        if filtro_tipo: df_filtrado = df_filtrado[df_filtrado['tipo_cancelamento'].isin(filtro_tipo)] # <-- NOVA LÓGICA DE CORTE AQUI
         
         st.divider()
         

@@ -7,38 +7,26 @@ from supabase import create_client, Client
 import extra_streamlit_components as stx
 
 # ---------------------------------------------------------
-# CONFIGURAÇÃO DA PÁGINA E TEMA
+# 1. CONFIGURAÇÃO DA PÁGINA E CSS SEGURO
 # ---------------------------------------------------------
 st.set_page_config(page_title="Super Connect | Retenção", layout="wide", page_icon="📉", initial_sidebar_state="expanded")
 
+# CSS Limpo e Seguro: Oculta apenas botões nativos indesejados sem quebrar componentes customizados
 st.markdown("""
     <style>
-    section[data-testid="stSidebar"] div[data-testid="stElementContainer"] svg {
-        display: none !important;
-    }
-    section[data-testid="stSidebar"] div[data-testid="stElementToolbar"],
-    section[data-testid="stSidebar"] button[title="View fullscreen"] {
-        display: none !important;
-    }
-    section[data-testid="stSidebar"] iframe,
-    section[data-testid="stSidebar"] div[data-testid="stCustomComponentV1"],
-    section[data-testid="stSidebar"] div[data-testid="stCustomComponentV1"] > div {
-        border: none !important;
-        outline: none !important;
-        box-shadow: none !important;
-        background-color: transparent !important;
-    }
+    button[title="View fullscreen"] { display: none !important; }
+    header[data-testid="stHeader"] { background-color: transparent !important; }
     </style>
 """, unsafe_allow_html=True)
 
 # ---------------------------------------------------------
-# GERENCIADOR DE COOKIES (MEMÓRIA DE 2 HORAS)
+# 2. GERENCIADOR DE COOKIES (Sessão de 2 horas)
 # ---------------------------------------------------------
-if "cookie_manager" not in st.session_state:
-    st.session_state.cookie_manager = stx.CookieManager()
-cookie_manager = st.session_state.cookie_manager
+# A chave "cookie_manager" isola o componente para não conflitar com o menu
+cookie_manager = stx.CookieManager(key="cookie_manager")
+
 # ---------------------------------------------------------
-# INICIALIZAÇÃO DO BANCO DE DADOS (SUPABASE NA NUVEM)
+# 3. INICIALIZAÇÃO DO BANCO DE DADOS (SUPABASE)
 # ---------------------------------------------------------
 url = st.secrets["SUPABASE_URL"]
 key = st.secrets["SUPABASE_KEY"]
@@ -83,16 +71,9 @@ if "logged_in" not in st.session_state:
     st.session_state.logged_in = False
     st.session_state.usuario_logado = None
 
-MOTIVOS = [
-    "Insatisfação", 
-    "Mudança de endereço", 
-    "Inviabilidade", 
-    "Problemas financeiros", 
-    "Revertido", 
-    "Outros"
-]
+MOTIVOS = ["Insatisfação", "Mudança de endereço", "Inviabilidade", "Problemas financeiros", "Revertido", "Outros"]
 
-# --- VERIFICAÇÃO SILENCIOSA DO COOKIE NO NAVEGADOR ---
+# --- LÓGICA DE VERIFICAÇÃO DO COOKIE ---
 cookie_user = cookie_manager.get(cookie="super_connect_login")
 
 if cookie_user and not st.session_state.logged_in:
@@ -104,11 +85,10 @@ if cookie_user and not st.session_state.logged_in:
         st.session_state.usuario_logado = user_match.iloc[0].to_dict()
 
 # ---------------------------------------------------------
-# TELA DE LOGIN 
+# 4. TELA DE LOGIN 
 # ---------------------------------------------------------
 if not st.session_state.logged_in:
     import base64
-
     def get_base64_of_bin_file(bin_file):
         try:
             with open(bin_file, 'rb') as f:
@@ -117,43 +97,29 @@ if not st.session_state.logged_in:
         except FileNotFoundError:
             return ""
 
-    nome_da_imagem = "background.png" 
-    img_base64 = get_base64_of_bin_file(nome_da_imagem)
+    img_base64 = get_base64_of_bin_file("background.png")
 
     st.markdown(f"""
         <style>
         .stApp {{
             background-image: url("data:image/png;base64,{img_base64}");
-            background-size: cover;
-            background-position: center top; 
-            background-repeat: no-repeat;
-            background-attachment: fixed;
+            background-size: cover; background-position: center top; background-repeat: no-repeat; background-attachment: fixed;
         }}
         section[data-testid="stSidebar"] {{ display: none !important; }}
-        header[data-testid="stHeader"] {{ background-color: transparent !important; }}
-
         div[data-testid="stForm"] {{
-            background-color: rgba(15, 23, 42, 0.85) !important; 
-            border-radius: 12px !important;
-            border: 1px solid rgba(255, 255, 255, 0.1) !important; 
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.8) !important; 
-            padding: 30px 20px !important;
-            margin-top: 200px !important; 
+            background-color: rgba(15, 23, 42, 0.85) !important; border-radius: 12px !important;
+            border: 1px solid rgba(255, 255, 255, 0.1) !important; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.8) !important; 
+            padding: 30px 20px !important; margin-top: 200px !important; 
         }}
         div[data-testid="stForm"] p, div[data-testid="stForm"] label {{ color: #f8fafc !important; }}
-        
-        div[data-testid="stFormSubmitButton"] button {{
-            background-color: #1e293b !important; color: #f8fafc !important; border: 1px solid #475569 !important;
-        }}
+        div[data-testid="stFormSubmitButton"] button {{ background-color: #1e293b !important; color: #f8fafc !important; border: 1px solid #475569 !important; }}
         div[data-testid="stFormSubmitButton"] button p {{ color: #f8fafc !important; }}
         div[data-testid="stFormSubmitButton"] button:hover {{ border-color: #39ff14 !important; background-color: #0f172a !important; }}
         div[data-testid="stFormSubmitButton"] button:hover p {{ color: #39ff14 !important; }}
-        div[data-testid="stVerticalBlock"] > div[style*="border"] {{ border: none !important; background: transparent !important; }}
         </style>
     """, unsafe_allow_html=True)
 
     col1, col2, col3 = st.columns([1.5, 1, 1.5])
-    
     with col2:
         with st.form("form_login"):
             email_input = st.text_input("E-mail")
@@ -168,30 +134,27 @@ if not st.session_state.logged_in:
                     st.session_state.logged_in = True
                     st.session_state.usuario_logado = user_match.iloc[0].to_dict()
                     
-                    # --- GRAVA O COOKIE PARA DURAR 2 HORAS ---
+                    # Salva o cookie com validade de 2 horas
                     validade = datetime.datetime.now() + datetime.timedelta(hours=2)
                     cookie_manager.set("super_connect_login", email_input, expires_at=validade)
-                    
                     st.rerun()
                 else:
                     st.error("E-mail ou senha incorretos.")
     st.stop()
     
 # ---------------------------------------------------------
-# MENU LATERAL (SIDEBAR)
+# 5. MENU LATERAL (SIDEBAR)
 # ---------------------------------------------------------
 with st.sidebar:
     st.markdown("""
         <style>
         @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&display=swap');
-        .titulo-sidebar { font-family: 'Bebas Neue', sans-serif; font-size: 50px; text-align: center; text-transform: uppercase; margin-bottom: 5px; letter-spacing: 2px; line-height: 0.85; }
         .subtitulo-sidebar { text-align: center; font-size: 14px; margin-bottom: 15px; font-weight: 500; }
-        section[data-testid="stSidebar"] div[data-testid="stSidebarUserContent"] { padding-top: 1rem !important; }
         </style>
     """, unsafe_allow_html=True) 
 
     st.image("images-Photoroom.png", use_container_width=True)
-    st.markdown('<div class="subtitulo-sidebar" style="margin-top: -15px; margin-bottom: 20px; text-align: center;">RETENÇÃO E CANCELAMENTO</div>', unsafe_allow_html=True)
+    st.markdown('<div class="subtitulo-sidebar" style="margin-top: -15px; margin-bottom: 20px;">RETENÇÃO E CANCELAMENTO</div>', unsafe_allow_html=True)
     st.divider()
 
     funcao_atual = st.session_state.usuario_logado["Funcao"]
@@ -203,27 +166,23 @@ with st.sidebar:
         opcoes_menu = ["Novo Atendimento", "Dashboard"]
         icones_menu = ["headset", "grid"]
 
+    # Menu limpo, com KEY exclusiva para não sumir
     menu = option_menu(
         menu_title=None, 
         options=opcoes_menu, 
         icons=icones_menu, 
         default_index=0,
-        key="menu_lateral",
+        key="menu_principal",
         styles={
-            "container": { "padding": "0!important", "border": "none", "background-color": "transparent" },
-            "nav-link": { 
-                "font-family": "'Bebas Neue', sans-serif", 
-                "font-size": "18px", 
-                "text-align": "left", 
-                "margin": "8px 0px"
-            }
+            "container": { "padding": "0!important", "border": "none" },
+            "nav-link": { "font-family": "'Bebas Neue', sans-serif", "font-size": "18px", "text-align": "left", "margin": "8px 0px" }
         }
     )
+    
     st.divider()
     st.caption(f"👤 **{st.session_state.usuario_logado['Nome']}** ({funcao_atual})")
     
     if st.button("Sair", use_container_width=True):
-        # APAGA O COOKIE AO CLICAR EM SAIR
         cookie_manager.delete("super_connect_login")
         st.session_state.logged_in = False
         st.session_state.usuario_logado = None
@@ -235,7 +194,7 @@ st.write("")
 st.write("")
 
 # ---------------------------------------------------------
-# TELA 1: NOVO ATENDIMENTO 
+# 6. TELA 1: NOVO ATENDIMENTO 
 # ---------------------------------------------------------
 if menu == "Novo Atendimento":
     st.header("Registrar Atendimento")
@@ -244,61 +203,42 @@ if menu == "Novo Atendimento":
     with st.container(border=True):
         with st.form("form_registro", clear_on_submit=True):
             col1, col2, col3 = st.columns(3)
-            with col1:
-                cliente = st.text_input("Nome do Cliente *", placeholder="Ex.: João da Silva")
-            with col2:
-                id_cliente = st.text_input("ID do Cliente *", placeholder="Ex.: 10243578")
-            with col3:
-                cidade = st.text_input("Cidade *", placeholder="Ex.: Nome da cidade")
+            with col1: cliente = st.text_input("Nome do Cliente *", placeholder="Ex.: João da Silva")
+            with col2: id_cliente = st.text_input("ID do Cliente *", placeholder="Ex.: 10243578")
+            with col3: cidade = st.text_input("Cidade *", placeholder="Ex.: Nome da cidade")
 
             col_plano, col_valor, col_status = st.columns(3)
             with col_plano:
                 lista_planos = [
-                    "Selecione o plano...", "Internet", "Câmera", "Chip", "TV", 
-                    "Internet+Câmera", "Internet+Chip", "Internet+TV", 
-                    "Câmera+Chip", "Câmera+TV", "Chip+TV", "Internet+Câmera+Chip", 
+                    "Selecione o plano...", "Internet", "Câmera", "Chip", "TV", "Internet+Câmera", "Internet+Chip", 
+                    "Internet+TV", "Câmera+Chip", "Câmera+TV", "Chip+TV", "Internet+Câmera+Chip", 
                     "Internet+Câmera+TV", "Internet+Chip+TV", "Câmera+Chip+TV", "Internet+Câmera+Chip+TV"
                 ]
                 plano_cancelado = st.selectbox("Plano Alvo do Cancelamento *", lista_planos)
-                
-            with col_valor:
-                valor_perdido = st.text_input("Valor em Risco/Perdido (R$) *", placeholder="Ex.: 150,50")
-                
-            with col_status:
-                status_retencao = st.selectbox("Status Final da Retenção *", ["Selecione...", "Cancelamento Concluído", "Cliente Retido/Revertido"])
+            with col_valor: valor_perdido = st.text_input("Valor em Risco/Perdido (R$) *", placeholder="Ex.: 150,50")
+            with col_status: status_retencao = st.selectbox("Status Final da Retenção *", ["Selecione...", "Cancelamento Concluído", "Cliente Retido/Revertido"])
 
             col_motivo, col_migrado = st.columns(2)
-            with col_motivo:
-                motivo = st.selectbox("Motivo Principal *", ["Selecione o motivo principal..."] + MOTIVOS)
-            
+            with col_motivo: motivo = st.selectbox("Motivo Principal *", ["Selecione o motivo principal..."] + MOTIVOS)
             with col_migrado:
                 lista_migrados = ["Não se aplica (Cancelado)"] + lista_planos[1:]
                 plano_migrado = st.selectbox("Plano Migrado (Em caso de Retenção)", lista_migrados)
 
             col_tipo, col_pontos = st.columns(2)
-            with col_tipo:
-                tipo_cancelamento = st.radio("Tipo de Cancelamento *", ["Total", "Parcial"], horizontal=True)
-            
+            with col_tipo: tipo_cancelamento = st.radio("Tipo de Cancelamento *", ["Total", "Parcial"], horizontal=True)
             with col_pontos:
                 qtd_pontos = 0  
-                if tipo_cancelamento == "Parcial":
-                    qtd_pontos = st.number_input("Quantidade de Pontos Cancelados *", min_value=1, step=1)
+                if tipo_cancelamento == "Parcial": qtd_pontos = st.number_input("Quantidade de Pontos Cancelados *", min_value=1, step=1)
 
-            try:
-                nomes = st.session_state.colaboradores['Nome'].tolist()
-            except:
-                nomes = list(st.session_state.colaboradores)
+            try: nomes = st.session_state.colaboradores['Nome'].tolist()
+            except: nomes = list(st.session_state.colaboradores)
                 
-            lista_colaboradores = ["Selecione o colaborador..."] + nomes
-            colaborador = st.selectbox("Colaborador Responsável *", lista_colaboradores)
-
+            colaborador = st.selectbox("Colaborador Responsável *", ["Selecione o colaborador..."] + nomes)
             detalhes = st.text_area("Motivo Detalhado (Resumo)", placeholder="Resumo da ligação...")
             
             col_submit, col_clear = st.columns([8, 1])
-            with col_submit:
-                submit = st.form_submit_button("Registrar Atendimento", use_container_width=True)
-            with col_clear:
-                st.form_submit_button("Limpar", use_container_width=True)
+            with col_submit: submit = st.form_submit_button("Registrar Atendimento", use_container_width=True)
+            with col_clear: st.form_submit_button("Limpar", use_container_width=True)
                 
             if submit:
                 if (not cliente or not id_cliente or not cidade.strip() or not detalhes.strip() or 
@@ -306,8 +246,7 @@ if menu == "Novo Atendimento":
                     plano_cancelado.startswith("Selecione") or status_retencao.startswith("Selecione")):
                     st.warning("⚠️ Por favor, preencha todos os campos obrigatórios antes de submeter o atendimento.")
                 else:
-                    try:
-                        valor_formatado = float(valor_perdido.replace(".", "").replace(",", "."))
+                    try: valor_formatado = float(valor_perdido.replace(".", "").replace(",", "."))
                     except ValueError:
                         st.error("⚠️ Digite um valor válido no formato 150,50")
                         st.stop()
@@ -329,18 +268,15 @@ if menu == "Novo Atendimento":
                         st.error(f"Erro ao salvar na nuvem: {e}")
                     
 # ---------------------------------------------------------
-# TELA 2: DASHBOARD
+# 7. TELA 2: DASHBOARD
 # ---------------------------------------------------------
 elif menu == "Dashboard":
-
     col_titulo, col_de, col_ate, col_colab = st.columns([3, 1, 1, 1])
     with col_titulo:
         st.header("Dashboard da Supervisão")
         st.caption("Métricas em tempo real da retenção e cancelamento.")
-    with col_de:
-        data_inicio = st.date_input("De:", format="DD/MM/YYYY")
-    with col_ate:
-        data_fim = st.date_input("Até:", format="DD/MM/YYYY")
+    with col_de: data_inicio = st.date_input("De:", format="DD/MM/YYYY")
+    with col_ate: data_fim = st.date_input("Até:", format="DD/MM/YYYY")
     with col_colab:
         opcoes_colaboradores = ["Todos"] + st.session_state.colaboradores["Nome"].tolist()
         filtro_colab = st.selectbox("Colaborador", opcoes_colaboradores)
@@ -349,8 +285,7 @@ elif menu == "Dashboard":
     if not df.empty:
         df["Data_Calculo"] = pd.to_datetime(df["Data"], format="%d/%m/%Y %H:%M").dt.date
         df = df[(df["Data_Calculo"] >= data_inicio) & (df["Data_Calculo"] <= data_fim)]
-        if filtro_colab != "Todos":
-            df = df[df["Colaborador"] == filtro_colab]
+        if filtro_colab != "Todos": df = df[df["Colaborador"] == filtro_colab]
     
     total_atendimentos = len(df)
     retidos = len(df[df["Motivo"] == "Revertido"]) if not df.empty else 0
@@ -368,25 +303,20 @@ elif menu == "Dashboard":
     col_grafico, col_resumo = st.columns([2, 1])
     with col_grafico:
         st.subheader("Cancelamentos por Motivo Principal")
-        st.caption("Distribuição dos maiores ofensores no período selecionado.")
         if not df.empty:
             dados_grafico = df["Motivo"].value_counts().reset_index()
             dados_grafico.columns = ["Motivo", "Quantidade"]
-            
             grafico = alt.Chart(dados_grafico).mark_bar(size=35, cornerRadiusTopLeft=6, cornerRadiusTopRight=6).encode(
                 x=alt.X('Motivo', sort='-y', title=None, axis=alt.Axis(labelAngle=-40)),
                 y=alt.Y('Quantidade', title=None),
-                color=alt.Color('Motivo', legend=None, scale=alt.Scale(scheme='set2')),
-                tooltip=['Motivo', 'Quantidade']
+                color=alt.Color('Motivo', legend=None, scale=alt.Scale(scheme='set2')), tooltip=['Motivo', 'Quantidade']
             ).properties(height=350)
-            
             st.altair_chart(grafico, use_container_width=True, theme="streamlit")
         else:
             st.info("Sem dados suficientes para gerar o gráfico neste período.")
             
     with col_resumo:
         st.subheader("Resumo por Motivo")
-        st.caption("Contagem detalhada.")
         if not df.empty:
             resumo_df = df["Motivo"].value_counts().reset_index()
             resumo_df.columns = ["Motivo", "Quantidade"]
@@ -396,75 +326,54 @@ elif menu == "Dashboard":
 
     st.divider()
     st.subheader("Cidades com Mais Cancelamentos")
-    st.caption("Volume de ocorrências agrupadas por localidade.")
-    
     if not df.empty:
         resumo_cidade = df["Cidade"].value_counts().reset_index()
         resumo_cidade.columns = ["Cidade", "Total de Atendimentos"]
         st.dataframe(resumo_cidade, use_container_width=True)
-    else:
-        st.info("Nenhum dado de cidade registrado neste período.")
         
     st.divider()
     st.subheader("Desempenho Individual por Colaborador")
-    st.caption("Total de atendimentos e distribuição de motivos por agente.")
-    
     if not df.empty:
         desempenho = pd.crosstab(df["Colaborador"], df["Motivo"], margins=True, margins_name="Total")
         st.dataframe(desempenho, use_container_width=True)
-    else:
-        st.info("Nenhum atendimento registrado para exibir desempenho.")
         
     st.divider()
     st.subheader("Histórico Detalhado de Atendimentos")
-    st.caption("Últimos 10 registros da operação no período selecionado.")
-    
     if not df.empty:
         tabela_historico = df[["Data", "Colaborador", "ID", "Cliente", "Cidade", "Motivo", "Detalhes"]]
-        tabela_historico.columns = [
-            "Data/Hora", "Colaborador Responsável", "ID",  "Nome", "Cidade", "Motivo Principal", "Motivo Detalhado"
-        ]
-        
+        tabela_historico.columns = ["Data/Hora", "Colaborador Responsável", "ID",  "Nome", "Cidade", "Motivo Principal", "Motivo Detalhado"]
         ultimos_10 = tabela_historico.tail(10).iloc[::-1]
         st.dataframe(ultimos_10, use_container_width=True)
         
         if len(tabela_historico) > 10:
             with st.expander("📂 Ampliar para lista completa de atendimentos"):
-                tabela_completa = tabela_historico.iloc[::-1]
-                st.dataframe(tabela_completa, use_container_width=True)
+                st.dataframe(tabela_historico.iloc[::-1], use_container_width=True)
     else:
         st.info("Nenhuma ligação foi registrada neste período.")
 
     st.write("") 
     st.markdown("#### 🗑️ Excluir Lançamento Incorreto")
     col1, col2, col3 = st.columns([2, 3, 5])
-    with col1:
-        id_apagar = st.text_input("ID", label_visibility="collapsed", placeholder="Digite o ID (ex: 2325)")
+    with col1: id_apagar = st.text_input("ID", label_visibility="collapsed", placeholder="Digite o ID (ex: 2325)")
     with col2:
         if st.button("🗑️ Apagar Registro", use_container_width=True):
             if id_apagar:
-                id_limpo = id_apagar.strip()
                 try:
-                    resposta = supabase.table("atendimentos").delete().eq("id_cliente", id_limpo).execute()
+                    resposta = supabase.table("atendimentos").delete().eq("id_cliente", id_apagar.strip()).execute()
                     if len(resposta.data) > 0:
                         st.cache_data.clear() 
                         st.session_state.atendimentos = carregar_atendimentos()
                         st.rerun() 
-                    else:
-                        st.error("❌ ID não encontrado no banco de dados.")
-                except Exception as e:
-                    st.error(f"Erro ao tentar apagar na nuvem: {e}")
-            else:
-                st.warning("⚠️ Digite um ID antes de clicar.")    
+                    else: st.error("❌ ID não encontrado no banco de dados.")
+                except Exception as e: st.error(f"Erro ao tentar apagar na nuvem: {e}")
+            else: st.warning("⚠️ Digite um ID antes de clicar.")    
 
 # ---------------------------------------------------------
-# TELA 3: COLABORADORES & ACESSOS 
+# 8. TELA 3: COLABORADORES & ACESSOS 
 # ---------------------------------------------------------
 elif menu == "Colaboradores":
-    if "mostrar_form" not in st.session_state:
-        st.session_state.mostrar_form = False
-    if "editando_index" not in st.session_state:
-        st.session_state.editando_index = None
+    if "mostrar_form" not in st.session_state: st.session_state.mostrar_form = False
+    if "editando_index" not in st.session_state: st.session_state.editando_index = None
 
     col_titulo, col_botao = st.columns([4, 1])
     with col_titulo:
@@ -476,7 +385,6 @@ elif menu == "Colaboradores":
             st.session_state.editando_index = None 
             st.rerun()
             
-    st.write("")
     aba_agentes, aba_acessos = st.tabs(["Agentes", "Acessos ao Sistema"])
     
     with aba_agentes:
@@ -490,8 +398,7 @@ elif menu == "Colaboradores":
                     with col3: novo_status = st.selectbox("Status", ["Ativo", "Inativo"])
                     
                     if st.form_submit_button("Salvar Colaborador"):
-                        if not novo_nome.strip():
-                            st.error("Por favor, preencha o nome do colaborador.")
+                        if not novo_nome.strip(): st.error("Por favor, preencha o nome do colaborador.")
                         else:
                             dados_colab = { "nome": novo_nome.strip(), "cargo": novo_cargo, "status": novo_status }
                             try:
@@ -499,10 +406,8 @@ elif menu == "Colaboradores":
                                 st.cache_data.clear()
                                 st.session_state.colaboradores = carregar_colaboradores()
                                 st.session_state.mostrar_form = False
-                                st.success(f"✅ {novo_nome} cadastrado na nuvem com sucesso!")
                                 st.rerun()
-                            except Exception as e:
-                                st.error(f"Erro ao salvar na nuvem: {e}")
+                            except Exception as e: st.error(f"Erro ao salvar na nuvem: {e}")
         
         st.divider()
         colaboradores_df = st.session_state.colaboradores
@@ -514,15 +419,14 @@ elif menu == "Colaboradores":
                     if st.session_state.editando_index == index:
                         col_vazia, col_lixeira = st.columns([4, 1])
                         with col_lixeira:
-                            if st.button("🗑️", key=f"del_{index}", help="Excluir colaborador"):
+                            if st.button("🗑️", key=f"del_{index}"):
                                 try:
                                     supabase.table("colaboradores").delete().eq("id", row["ID"]).execute()
                                     st.cache_data.clear()
                                     st.session_state.colaboradores = carregar_colaboradores()
                                     st.session_state.editando_index = None
                                     st.rerun()
-                                except Exception as e:
-                                    st.error(f"Erro ao excluir na nuvem: {e}")
+                                except Exception as e: st.error(f"Erro ao excluir na nuvem: {e}")
                                 
                         edit_nome = st.text_input("Nome", value=row["Nome"], key=f"edit_nome_{index}")
                         cargos = ["Operador", "Supervisor", "Gerente"]
@@ -543,10 +447,8 @@ elif menu == "Colaboradores":
                                         st.session_state.colaboradores = carregar_colaboradores()
                                         st.session_state.editando_index = None 
                                         st.rerun()
-                                    except Exception as e:
-                                        st.error(f"Erro ao atualizar na nuvem: {e}")
-                                else:
-                                    st.error("Nome não pode ficar vazio.")
+                                    except Exception as e: st.error(f"Erro ao atualizar na nuvem: {e}")
+                                else: st.error("Nome não pode ficar vazio.")
                         with col_cancel:
                             if st.button("Cancelar", key=f"cancel_{index}", use_container_width=True):
                                 st.session_state.editando_index = None 
@@ -562,14 +464,11 @@ elif menu == "Colaboradores":
     with aba_acessos:
         with st.container(border=True):
             st.markdown("#### 👤 Autorizar Novo Acesso")
-            st.caption("Crie um login para um colaborador acessar o sistema.")
-            
             with st.form("form_novo_acesso", clear_on_submit=True):
                 col1, col2, col3 = st.columns([2, 2, 1])
                 with col1: novo_nome = st.text_input("Nome", placeholder="Ex: João Silva")
                 with col2: novo_email = st.text_input("E-mail", placeholder="exemplo@superconnect.com.br")
                 with col3: nova_funcao = st.selectbox("Função", ["Operador", "Supervisor"])
-                    
                 nova_senha = st.text_input("Senha Temporária", placeholder="Defina uma senha", type="password")
                 
                 if st.form_submit_button("Salvar Acesso"):
@@ -579,18 +478,13 @@ elif menu == "Colaboradores":
                             supabase.table("usuarios").insert(dados_usuario).execute()
                             st.cache_data.clear()
                             st.session_state.usuarios = carregar_usuarios()
-                            st.success(f"✅ Acesso criado na nuvem para {novo_email}!")
                             st.rerun()
-                        except Exception as e:
-                            st.error(f"Erro ao salvar na nuvem: {e}")
-                    else:
-                        st.error("⚠️ Preencha todos os campos obrigatórios.")
+                        except Exception as e: st.error(f"Erro ao salvar na nuvem: {e}")
+                    else: st.error("⚠️ Preencha todos os campos obrigatórios.")
         
         st.write("")
         with st.container(border=True):
             st.markdown("#### 🛡️ Usuários Autorizados")
-            st.caption("Pessoas com acesso ao sistema. Remova para revogar o acesso.")
-            
             for index, row in st.session_state.usuarios.iterrows():
                 col_info, col_del = st.columns([8, 1])
                 with col_info:
@@ -604,31 +498,26 @@ elif menu == "Colaboradores":
                                 st.cache_data.clear()
                                 st.session_state.usuarios = carregar_usuarios()
                                 st.rerun()
-                            except Exception as e:
-                                st.error(f"Erro ao excluir na nuvem: {e}")
+                            except Exception as e: st.error(f"Erro ao excluir na nuvem: {e}")
                 st.divider()
 
 # ---------------------------------------------------------
-# TELA 4: RELATÓRIOS ANALÍTICOS
+# 9. TELA 4: RELATÓRIOS ANALÍTICOS
 # ---------------------------------------------------------
 elif menu == "Relatórios":
     st.header("Relatórios e Perdas Financeiras")
     st.caption("Filtre as variáveis para analisar o desempenho da operação e mapear a receita perdida.")
     
     df = st.session_state.atendimentos
-    
     if not df.empty:
         if "tipo_cancelamento" not in df.columns: df["tipo_cancelamento"] = "Não Informado"
         else: df["tipo_cancelamento"] = df["tipo_cancelamento"].fillna("Não Informado")
 
         with st.expander("🔍 Filtros de Busca", expanded=True):
             def zerar_filtros():
-                st.session_state.f_colab = []
-                st.session_state.f_status = []
-                st.session_state.f_plano = []
-                st.session_state.f_motivo = []
-                st.session_state.f_cidade = []
-                st.session_state.f_tipo = [] 
+                st.session_state.f_colab = []; st.session_state.f_status = []
+                st.session_state.f_plano = []; st.session_state.f_motivo = []
+                st.session_state.f_cidade = []; st.session_state.f_tipo = [] 
                 if 'f_data' in st.session_state: del st.session_state['f_data']
             
             col_btn, col_vazia = st.columns([2, 8])
@@ -671,9 +560,7 @@ elif menu == "Relatórios":
         if filtro_tipo: df_filtrado = df_filtrado[df_filtrado['tipo_cancelamento'].isin(filtro_tipo)]
         
         st.divider()
-        st.subheader("Visão Geral do Período")
         kpi1, kpi2, kpi3 = st.columns(3)
-        
         total_cancelados = len(df_filtrado[df_filtrado['Status'] == "Cancelamento Concluído"])
         total_revertidos = len(df_filtrado[df_filtrado['Status'] == "Cliente Retido/Revertido"])
         receita_perdida = df_filtrado['Valor Perdido'].sum()

@@ -679,6 +679,17 @@ if menu == "Novo Atendimento":
                 lista_migrados = ["Não se aplica (Cancelado)"] + lista_planos[1:]
                 plano_migrado = st.selectbox("Plano Migrado (Em caso de Retenção)", lista_migrados)
 
+            # --- TIPO DE CANCELAMENTO ---
+            col_tipo, col_pontos = st.columns(2)
+            with col_tipo:
+                tipo_cancelamento = st.radio("Tipo de Cancelamento *", ["Total", "Parcial"], horizontal=True)
+            
+            with col_pontos:
+                qtd_pontos = 0  # Se for total, o sistema registra zero pontos extras cancelados
+                if tipo_cancelamento == "Parcial":
+                    # Este campo só aparece na tela se o operador clicar em "Parcial"
+                    qtd_pontos = st.number_input("Quantidade de Pontos Cancelados *", min_value=1, step=1)
+
             # --- COLABORADOR E RESUMO (MANTIDO O SEU ORIGINAL) ---
                 # 1. Pegamos a tabela e transformamos a primeira coluna (os nomes) em uma lista normal
             try:
@@ -715,7 +726,7 @@ if menu == "Novo Atendimento":
                     # Puxa a data e hora exata do clique
                     data_atual = datetime.now().strftime("%d/%m/%Y %H:%M")
                     
-                    # 3. Prepara o pacote de dados EXATAMENTE como o banco de dados espera (letras minúsculas)
+                    # 3. Prepara o pacote de dados para o Supabase
                     dados_para_nuvem = {
                         "data": data_atual,
                         "cliente": cliente,
@@ -726,7 +737,10 @@ if menu == "Novo Atendimento":
                         "status": status_retencao,
                         "motivo": motivo,
                         "detalhes": detalhes,
-                        "colaborador": colaborador
+                        "colaborador": colaborador,
+                        # --- AS DUAS NOVAS INFORMAÇÕES AQUI ---
+                        "tipo_cancelamento": tipo_cancelamento,
+                        "qtd_pontos": qtd_pontos
                     }
                     
                     # 4. Manda o Supabase inserir e atualiza as memórias

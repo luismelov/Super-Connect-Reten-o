@@ -34,11 +34,7 @@ st.markdown("""
 # ---------------------------------------------------------
 # GERENCIADOR DE COOKIES (MEMÓRIA DE 2 HORAS)
 # ---------------------------------------------------------
-@st.cache_resource
-def get_cookie_manager():
-    return stx.CookieManager()
-
-cookie_manager = get_cookie_manager()
+cookie_manager = stx.CookieManager()
 
 # ---------------------------------------------------------
 # INICIALIZAÇÃO DO BANCO DE DADOS (SUPABASE NA NUVEM)

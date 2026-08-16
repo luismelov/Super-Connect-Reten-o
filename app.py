@@ -651,12 +651,27 @@ elif menu == "Colaboradores":
                 
                 if st.form_submit_button("Salvar Acesso"):
                     if novo_nome and novo_email and nova_senha:
-                        novo_user = {"Nome": novo_nome, "Email": novo_email, "Senha": nova_senha, "Funcao": nova_funcao}
-                        st.session_state.usuarios = pd.concat([st.session_state.usuarios, pd.DataFrame([novo_user])], ignore_index=True)
-                        st.success(f"Acesso criado para {novo_email}!")
-                        st.rerun()
+                        # PREPARA OS DADOS COM OS NOMES EXATOS DAS COLUNAS DO BANCO
+                        dados_usuario = {
+                            "nome": novo_nome, 
+                            "email": novo_email, 
+                            "senha": nova_senha, 
+                            "funcao": nova_funcao
+                        }
+                        try:
+                            # 1. Envia para o Supabase
+                            supabase.table("usuarios").insert(dados_usuario).execute()
+                            
+                            # 2. Limpa o cache e atualiza a memória local com dados da nuvem
+                            st.cache_data.clear()
+                            st.session_state.usuarios = carregar_usuarios()
+                            
+                            st.success(f"✅ Acesso criado na nuvem para {novo_email}!")
+                            st.rerun()
+                        except Exception as e:
+                            st.error(f"Erro ao salvar na nuvem: {e}")
                     else:
-                        st.error("Preencha todos os campos obrigatórios.")
+                        st.error("⚠️ Preencha todos os campos obrigatórios.")
         
         st.write("")
         with st.container(border=True):
@@ -669,10 +684,19 @@ elif menu == "Colaboradores":
                     st.markdown(f"**{row['Email']}**")
                     st.caption(f"{row['Nome']} • {row['Funcao']}")
                 with col_del:
+                    # Impede que você apague o seu próprio usuário logado
                     if row["Email"] != st.session_state.usuario_logado["Email"]:
                         if st.button("🗑️", key=f"del_user_{index}"):
-                            st.session_state.usuarios = st.session_state.usuarios.drop(index).reset_index(drop=True)
-                            st.rerun()
+                            try:
+                                # 1. Apaga do banco de dados na nuvem usando o Email como chave
+                                supabase.table("usuarios").delete().eq("email", row["Email"]).execute()
+                                
+                                # 2. Atualiza o sistema
+                                st.cache_data.clear()
+                                st.session_state.usuarios = carregar_usuarios()
+                                st.rerun()
+                            except Exception as e:
+                                st.error(f"Erro ao excluir na nuvem: {e}")
                 st.divider()
 
 # ---------------------------------------------------------

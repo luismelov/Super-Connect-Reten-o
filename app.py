@@ -515,16 +515,25 @@ elif menu == "Dashboard":
     with col2:
         if st.button("🗑️ Apagar Registro", use_container_width=True):
             if id_apagar:
-                banco_dados = st.session_state.atendimentos
-                banco_atualizado = banco_dados[banco_dados['ID'].astype(str) != id_apagar.strip()]
-                
-                if len(banco_atualizado) < len(banco_dados):
-                    st.session_state.atendimentos = banco_atualizado
-                    st.rerun() 
-                else:
-                    st.error("❌ ID não encontrado no histórico.")
+                id_limpo = id_apagar.strip()
+                try:
+                    # 1. Envia a ordem de exclusão diretamente para o banco de dados Supabase na nuvem
+                    # (Lembrando que a coluna no banco se chama 'id_cliente')
+                    resposta = supabase.table("atendimentos").delete().eq("id_cliente", id_limpo).execute()
+                    
+                    # 2. Se a resposta contiver dados, é porque o Supabase achou e apagou a linha
+                    if len(resposta.data) > 0:
+                        # Limpa o cache para esquecer os dados antigos
+                        st.cache_data.clear() 
+                        # Atualiza a tabela na tela puxando a versão mais nova do banco
+                        st.session_state.atendimentos = carregar_atendimentos()
+                        st.rerun() 
+                    else:
+                        st.error("❌ ID não encontrado no banco de dados.")
+                except Exception as e:
+                    st.error(f"Erro ao tentar apagar na nuvem: {e}")
             else:
-                st.warning("⚠️ Digite um ID antes de clicar.")    
+                st.warning("⚠️ Digite um ID antes de clicar.")   
 
 # ---------------------------------------------------------
 # TELA 3: COLABORADORES & ACESSOS 

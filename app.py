@@ -610,29 +610,6 @@ if tema_escuro:
 st.write("")
 st.write("")
 
-# --- MÁGICA DO TEMA NAS TABELAS ---
-# Função que escurece as tabelas se o interruptor estiver ligado
-def aplicar_tema_tabela(df_alvo):
-    if estado_tema:
-        return df_alvo.style.set_properties(**{
-            'background-color': '#1e293b',
-            'color': '#f8fafc',
-            'border-color': '#475569'
-        }).set_table_styles([
-            # Força o fundo escuro especificamente nos cabeçalhos (Topo)
-            {'selector': 'thead th', 'props': [
-                ('background-color', '#334155 !important'), 
-                ('color', '#f8fafc !important'),
-                ('border', '1px solid #475569 !important')
-            ]},
-            # Pega qualquer outro elemento de cabeçalho residual
-            {'selector': 'th', 'props': [
-                ('background-color', '#334155 !important'), 
-                ('color', '#f8fafc !important')
-            ]}
-        ])
-    return df_alvo
-
 # ---------------------------------------------------------
 # TELA 1: NOVO ATENDIMENTO (Baseado na image_ef1e57.png)
 # ---------------------------------------------------------
@@ -899,7 +876,7 @@ elif menu == "Dashboard":
             resumo_df.columns = ["Motivo", "Quantidade"]
             
             # Aplicamos a função para escurecer a tabela
-            st.dataframe(aplicar_tema_tabela(resumo_df), use_container_width=True)
+            st.dataframe(resumo_df, use_container_width=True)
         else:
             st.info("Nenhum atendimento registrado neste período.")
 
@@ -915,7 +892,7 @@ elif menu == "Dashboard":
         resumo_cidade.columns = ["Cidade", "Total de Atendimentos"]
         
         # Exibe a tabela (já usando a sua função que escurece o tema, se necessário)
-        st.dataframe(aplicar_tema_tabela(resumo_cidade), use_container_width=True)
+        st.dataframe(resumo_cidade, use_container_width=True)
     else:
         st.info("Nenhum dado de cidade registrado neste período.")
         
@@ -929,7 +906,7 @@ elif menu == "Dashboard":
         desempenho = pd.crosstab(df["Colaborador"], df["Motivo"], margins=True, margins_name="Total")
         
         # Aplicamos a função para escurecer a tabela
-        st.dataframe(aplicar_tema_tabela(desempenho), use_container_width=True)
+        st.dataframe(desempenho, use_container_width=True)
     else:
         st.info("Nenhum atendimento registrado para exibir desempenho.")
         
@@ -950,14 +927,14 @@ elif menu == "Dashboard":
         ultimos_10 = tabela_historico.tail(10).iloc[::-1]
         
         # Mostra a tabela principal enxuta
-        st.dataframe(aplicar_tema_tabela(ultimos_10), use_container_width=True)
+        st.dataframe(ultimos_10, use_container_width=True)
         
         # 2. Se houver mais de 10 registros, cria o menu expansível
         if len(tabela_historico) > 10:
             with st.expander("📂 Ampliar para lista completa de atendimentos"):
                 # Mostra todos os dados do período, também do mais novo para o mais antigo
                 tabela_completa = tabela_historico.iloc[::-1]
-                st.dataframe(aplicar_tema_tabela(tabela_completa), use_container_width=True)
+                st.dataframe(tabela_completa, use_container_width=True)
                 
     else:
         st.info("Nenhuma ligação foi registrada neste período.")
@@ -1271,7 +1248,7 @@ elif menu == "Relatórios":
         df_exibicao = df_filtrado.drop(columns=['Data_Real']).set_index('Data')
         
         # O st.dataframe agora está forçado a ficar transparente pelo CSS
-        st.dataframe(aplicar_tema_tabela(df_exibicao), use_container_width=True)
+        st.dataframe(df_exibicao, use_container_width=True)
         
     else:
         st.info("Nenhuma ligação foi registrada no sistema ainda.")

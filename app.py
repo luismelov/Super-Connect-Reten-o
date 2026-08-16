@@ -576,10 +576,25 @@ elif menu == "Colaboradores":
                         if not novo_nome.strip():
                             st.error("Por favor, preencha o nome do colaborador.")
                         else:
-                            nova_linha = pd.DataFrame([{"Nome": novo_nome, "Cargo": novo_cargo, "Status": novo_status}])
-                            st.session_state.colaboradores = pd.concat([st.session_state.colaboradores, nova_linha], ignore_index=True)
-                            st.session_state.mostrar_form = False
-                            st.rerun()
+                            # 1. Prepara os dados com os nomes das colunas originais do banco (minúsculas)
+                            dados_colab = {
+                                "nome": novo_nome.strip(),
+                                "cargo": novo_cargo,
+                                "status": novo_status
+                            }
+                            try:
+                                # 2. Envia para o Supabase
+                                supabase.table("colaboradores").insert(dados_colab).execute()
+                                
+                                # 3. Atualiza a memória
+                                st.cache_data.clear()
+                                st.session_state.colaboradores = carregar_colaboradores()
+                                st.session_state.mostrar_form = False
+                                
+                                st.success(f"✅ {novo_nome} cadastrado na nuvem com sucesso!")
+                                st.rerun()
+                            except Exception as e:
+                                st.error(f"Erro ao salvar na nuvem: {e}")
         
         st.divider()
         
@@ -590,13 +605,22 @@ elif menu == "Colaboradores":
             with cols[index % 3]:
                 with st.container(border=True):
                     
+                    # --- MODO DE EDIÇÃO DO CARD ---
                     if st.session_state.editando_index == index:
                         col_vazia, col_lixeira = st.columns([4, 1])
                         with col_lixeira:
                             if st.button("🗑️", key=f"del_{index}", help="Excluir colaborador"):
-                                st.session_state.colaboradores = st.session_state.colaboradores.drop(index).reset_index(drop=True)
-                                st.session_state.editando_index = None
-                                st.rerun()
+                                try:
+                                    # 1. Apaga do banco de dados na nuvem usando o ID
+                                    supabase.table("colaboradores").delete().eq("id", row["ID"]).execute()
+                                    
+                                    # 2. Atualiza a memória
+                                    st.cache_data.clear()
+                                    st.session_state.colaboradores = carregar_colaboradores()
+                                    st.session_state.editando_index = None
+                                    st.rerun()
+                                except Exception as e:
+                                    st.error(f"Erro ao excluir na nuvem: {e}")
                                 
                         edit_nome = st.text_input("Nome", value=row["Nome"], key=f"edit_nome_{index}")
                         
@@ -612,11 +636,23 @@ elif menu == "Colaboradores":
                         with col_save:
                             if st.button("Salvar", key=f"save_{index}", use_container_width=True):
                                 if edit_nome.strip():
-                                    st.session_state.colaboradores.at[index, "Nome"] = edit_nome
-                                    st.session_state.colaboradores.at[index, "Cargo"] = edit_cargo
-                                    st.session_state.colaboradores.at[index, "Status"] = edit_status
-                                    st.session_state.editando_index = None 
-                                    st.rerun()
+                                    # 1. Empacota os dados editados
+                                    dados_update = {
+                                        "nome": edit_nome.strip(),
+                                        "cargo": edit_cargo,
+                                        "status": edit_status
+                                    }
+                                    try:
+                                        # 2. Envia a atualização para a linha correspondente ao ID no Supabase
+                                        supabase.table("colaboradores").update(dados_update).eq("id", row["ID"]).execute()
+                                        
+                                        # 3. Atualiza o sistema
+                                        st.cache_data.clear()
+                                        st.session_state.colaboradores = carregar_colaboradores()
+                                        st.session_state.editando_index = None 
+                                        st.rerun()
+                                    except Exception as e:
+                                        st.error(f"Erro ao atualizar na nuvem: {e}")
                                 else:
                                     st.error("Nome não pode ficar vazio.")
                         with col_cancel:
@@ -624,6 +660,7 @@ elif menu == "Colaboradores":
                                 st.session_state.editando_index = None 
                                 st.rerun()
                                 
+                    # --- MODO DE VISUALIZAÇÃO DO CARD ---
                     else:
                         st.subheader(row["Nome"])
                         st.markdown(f"**Cargo:** {row['Cargo']} &nbsp;&nbsp; | &nbsp;&nbsp; **Status:** {row['Status']}")

@@ -4,29 +4,21 @@ import pandas as pd
 import datetime
 import altair as alt
 from supabase import create_client, Client
-import extra_streamlit_components as stx
 
 # ---------------------------------------------------------
-# 1. CONFIGURAÇÃO DA PÁGINA E CSS SEGURO
+# 1. CONFIGURAÇÃO DA PÁGINA
 # ---------------------------------------------------------
 st.set_page_config(page_title="Super Connect | Retenção", layout="wide", page_icon="📉", initial_sidebar_state="expanded")
 
-# CSS Limpo e Seguro: Oculta apenas botões nativos indesejados sem quebrar componentes customizados
+# Removido todo o CSS que causava conflito com o menu
 st.markdown("""
     <style>
-    button[title="View fullscreen"] { display: none !important; }
     header[data-testid="stHeader"] { background-color: transparent !important; }
     </style>
 """, unsafe_allow_html=True)
 
 # ---------------------------------------------------------
-# 2. GERENCIADOR DE COOKIES (Sessão de 2 horas)
-# ---------------------------------------------------------
-# A chave "cookie_manager" isola o componente para não conflitar com o menu
-cookie_manager = stx.CookieManager(key="cookie_manager")
-
-# ---------------------------------------------------------
-# 3. INICIALIZAÇÃO DO BANCO DE DADOS (SUPABASE)
+# 2. INICIALIZAÇÃO DO BANCO DE DADOS (SUPABASE)
 # ---------------------------------------------------------
 url = st.secrets["SUPABASE_URL"]
 key = st.secrets["SUPABASE_KEY"]
@@ -59,7 +51,7 @@ def carregar_atendimentos():
         "data": "Data", "cliente": "Cliente", "id_cliente": "ID", "cidade": "Cidade", 
         "plano_cancelado": "Plano Cancelado", "valor_perdido": "Valor Perdido", 
         "status": "Status", "motivo": "Motivo", "detalhes": "Detalhes", "colaborador": "Colaborador",
-        "tipo_cancelamento": "tipo_cancelamento"
+        "tipo_cancelamento": "tipo_cancelamento", "qtd_pontos": "qtd_pontos"
     })
     return df
 
@@ -73,19 +65,8 @@ if "logged_in" not in st.session_state:
 
 MOTIVOS = ["Insatisfação", "Mudança de endereço", "Inviabilidade", "Problemas financeiros", "Revertido", "Outros"]
 
-# --- LÓGICA DE VERIFICAÇÃO DO COOKIE ---
-cookie_user = cookie_manager.get(cookie="super_connect_login")
-
-if cookie_user and not st.session_state.logged_in:
-    df_users = st.session_state.usuarios
-    user_match = df_users[df_users["Email"] == cookie_user]
-    
-    if not user_match.empty:
-        st.session_state.logged_in = True
-        st.session_state.usuario_logado = user_match.iloc[0].to_dict()
-
 # ---------------------------------------------------------
-# 4. TELA DE LOGIN 
+# 3. TELA DE LOGIN 
 # ---------------------------------------------------------
 if not st.session_state.logged_in:
     import base64
@@ -133,17 +114,13 @@ if not st.session_state.logged_in:
                 if not user_match.empty:
                     st.session_state.logged_in = True
                     st.session_state.usuario_logado = user_match.iloc[0].to_dict()
-                    
-                    # Salva o cookie com validade de 2 horas
-                    validade = datetime.datetime.now() + datetime.timedelta(hours=2)
-                    cookie_manager.set("super_connect_login", email_input, expires_at=validade)
                     st.rerun()
                 else:
                     st.error("E-mail ou senha incorretos.")
     st.stop()
     
 # ---------------------------------------------------------
-# 5. MENU LATERAL (SIDEBAR)
+# 4. MENU LATERAL (SIDEBAR)
 # ---------------------------------------------------------
 with st.sidebar:
     st.markdown("""
@@ -166,15 +143,14 @@ with st.sidebar:
         opcoes_menu = ["Novo Atendimento", "Dashboard"]
         icones_menu = ["headset", "grid"]
 
-    # Menu limpo, com KEY exclusiva para não sumir
+    # Menu estabilizado
     menu = option_menu(
         menu_title=None, 
         options=opcoes_menu, 
         icons=icones_menu, 
         default_index=0,
-        key="menu_principal",
         styles={
-            "container": { "padding": "0!important", "border": "none" },
+            "container": { "padding": "0!important", "border": "none", "background-color": "transparent" },
             "nav-link": { "font-family": "'Bebas Neue', sans-serif", "font-size": "18px", "text-align": "left", "margin": "8px 0px" }
         }
     )
@@ -183,7 +159,6 @@ with st.sidebar:
     st.caption(f"👤 **{st.session_state.usuario_logado['Nome']}** ({funcao_atual})")
     
     if st.button("Sair", use_container_width=True):
-        cookie_manager.delete("super_connect_login")
         st.session_state.logged_in = False
         st.session_state.usuario_logado = None
         st.rerun()
@@ -194,7 +169,7 @@ st.write("")
 st.write("")
 
 # ---------------------------------------------------------
-# 6. TELA 1: NOVO ATENDIMENTO 
+# 5. TELA 1: NOVO ATENDIMENTO 
 # ---------------------------------------------------------
 if menu == "Novo Atendimento":
     st.header("Registrar Atendimento")
@@ -268,7 +243,7 @@ if menu == "Novo Atendimento":
                         st.error(f"Erro ao salvar na nuvem: {e}")
                     
 # ---------------------------------------------------------
-# 7. TELA 2: DASHBOARD
+# 6. TELA 2: DASHBOARD
 # ---------------------------------------------------------
 elif menu == "Dashboard":
     col_titulo, col_de, col_ate, col_colab = st.columns([3, 1, 1, 1])
@@ -369,7 +344,7 @@ elif menu == "Dashboard":
             else: st.warning("⚠️ Digite um ID antes de clicar.")    
 
 # ---------------------------------------------------------
-# 8. TELA 3: COLABORADORES & ACESSOS 
+# 7. TELA 3: COLABORADORES & ACESSOS 
 # ---------------------------------------------------------
 elif menu == "Colaboradores":
     if "mostrar_form" not in st.session_state: st.session_state.mostrar_form = False
@@ -502,7 +477,7 @@ elif menu == "Colaboradores":
                 st.divider()
 
 # ---------------------------------------------------------
-# 9. TELA 4: RELATÓRIOS ANALÍTICOS
+# 8. TELA 4: RELATÓRIOS ANALÍTICOS
 # ---------------------------------------------------------
 elif menu == "Relatórios":
     st.header("Relatórios e Perdas Financeiras")
@@ -571,6 +546,10 @@ elif menu == "Relatórios":
             
         st.divider()
         st.markdown("#### Detalhamento dos Lançamentos")
+        df_exibicao = df_filtrado.drop(columns=['Data_Real']).set_index('Data')
+        st.dataframe(df_exibicao, use_container_width=True)
+    else:
+        st.info("Nenhuma ligação foi registrada no sistema ainda.")
         df_exibicao = df_filtrado.drop(columns=['Data_Real']).set_index('Data')
         st.dataframe(df_exibicao, use_container_width=True)
     else:

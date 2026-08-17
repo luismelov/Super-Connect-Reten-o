@@ -226,19 +226,34 @@ if menu == "Novo Atendimento":
                 st.form_submit_button("Limpar", use_container_width=True)
                 
             if submit:
+                # 1. Trava de campos vazios
                 if (not cliente or not id_cliente or not cidade.strip() or not detalhes.strip() or 
                     motivo.startswith("Selecione") or colaborador.startswith("Selecione") or 
                     plano_cancelado.startswith("Selecione") or status_retencao.startswith("Selecione")):
                     st.warning("⚠️ Por favor, preencha todos os campos obrigatórios antes de submeter o atendimento.")
+                
+                # 2. A NOVA TRAVA: Verifica se o ID digitado tem apenas números
+                elif not id_cliente.strip().isdigit():
+                    st.error("❌ O campo 'ID do Cliente' deve conter APENAS NÚMEROS. Verifique se você não inverteu o Nome com o ID.")
+                
                 else:
                     try:
                         valor_formatado = float(valor_perdido.replace(".", "").replace(",", "."))
                         data_atual = datetime.datetime.now().strftime("%d/%m/%Y %H:%M")
                         
                         dados_para_nuvem = {
-                            "data": data_atual, "cliente": cliente, "id_cliente": id_cliente, "cidade": cidade.title(),
-                            "plano_cancelado": plano_cancelado, "valor_perdido": valor_formatado, "status": status_retencao,
-                            "motivo": motivo, "detalhes": detalhes, "colaborador": colaborador, "tipo_cancelamento": tipo_cancelamento, "qtd_pontos": qtd_pontos
+                            "data": data_atual, 
+                            "cliente": cliente, 
+                            "id_cliente": int(id_cliente.strip()), # Converte garantido para o formato do Supabase
+                            "cidade": cidade.title(),
+                            "plano_cancelado": plano_cancelado, 
+                            "valor_perdido": valor_formatado, 
+                            "status": status_retencao,
+                            "motivo": motivo, 
+                            "detalhes": detalhes, 
+                            "colaborador": colaborador, 
+                            "tipo_cancelamento": tipo_cancelamento, 
+                            "qtd_pontos": qtd_pontos
                         }
                         
                         supabase.table("atendimentos").insert(dados_para_nuvem).execute()
@@ -246,7 +261,7 @@ if menu == "Novo Atendimento":
                         st.session_state.atendimentos = carregar_atendimentos()
                         st.success("✅ Atendimento registrado e salvo na nuvem com sucesso!")
                     except ValueError:
-                        st.error("⚠️ Digite um valor válido no formato 150,50")
+                        st.error("⚠️ Digite um valor válido no formato 150,50 no campo 'Valor em Risco/Perdido'.")
                     except Exception as e:
                         st.error(f"Erro ao salvar na nuvem: {e}")
                     

@@ -226,13 +226,13 @@ if menu == "Novo Atendimento":
                 st.form_submit_button("Limpar", use_container_width=True)
                 
             if submit:
-                # 1. Trava de campos vazios
+                # Trava de campos vazios
                 if (not cliente or not id_cliente or not cidade.strip() or not detalhes.strip() or 
                     motivo.startswith("Selecione") or colaborador.startswith("Selecione") or 
                     plano_cancelado.startswith("Selecione") or status_retencao.startswith("Selecione")):
                     st.warning("⚠️ Por favor, preencha todos os campos obrigatórios antes de submeter o atendimento.")
                 
-                # 2. A NOVA TRAVA: Verifica se o ID digitado tem apenas números
+                # Trava de ID (Aceita apenas números)
                 elif not id_cliente.strip().isdigit():
                     st.error("❌ O campo 'ID do Cliente' deve conter APENAS NÚMEROS. Verifique se você não inverteu o Nome com o ID.")
                 
@@ -244,7 +244,7 @@ if menu == "Novo Atendimento":
                         dados_para_nuvem = {
                             "data": data_atual, 
                             "cliente": cliente, 
-                            "id_cliente": int(id_cliente.strip()), # Converte garantido para o formato do Supabase
+                            "id_cliente": int(id_cliente.strip()), 
                             "cidade": cidade.title(),
                             "plano_cancelado": plano_cancelado, 
                             "valor_perdido": valor_formatado, 
@@ -365,17 +365,22 @@ elif menu == "Dashboard":
         if st.button("🗑️ Apagar Registro", use_container_width=True):
             if id_apagar:
                 try:
-                    # 1. Apaga do banco de dados na nuvem exatamente como fizemos nos Colaboradores
-                    supabase.table("atendimentos").delete().eq("id_cliente", id_apagar.strip()).execute()
+                    # Força o que foi digitado a virar um número puro
+                    id_numero = int(id_apagar.strip())
                     
-                    # 2. Atualiza a memória instantaneamente e recarrega a tela
+                    # Manda o número para o banco de dados
+                    supabase.table("atendimentos").delete().eq("id_cliente", id_numero).execute()
+                    
+                    # Atualiza a tela
                     st.cache_data.clear() 
                     st.session_state.atendimentos = carregar_atendimentos()
                     st.rerun() 
+                except ValueError:
+                    st.error("⚠️ Por favor, digite apenas números no campo de ID.")
                 except Exception as e:
                     st.error(f"Erro ao tentar apagar na nuvem: {e}")
             else:
-                st.warning("⚠️ Digite um ID antes de clicar.")  
+                st.warning("⚠️ Digite um ID antes de clicar.")
 
 # ---------------------------------------------------------
 # 7. TELA 3: COLABORADORES & ACESSOS 
@@ -507,45 +512,25 @@ elif menu == "Colaboradores":
                     else:
                         st.error("⚠️ Preencha todos os campos obrigatórios.")
         
-        st.write("") 
-    st.markdown("#### 🗑️ Excluir Lançamento Incorreto")
-    col1, col2, col3 = st.columns([2, 3, 5])
-    with col1:
-        id_apagar = st.text_input("ID", label_visibility="collapsed", placeholder="Digite o ID (ex: 2325)")
-    with col2:
-        if st.button("🗑️ Apagar Registro", use_container_width=True):
-            if id_apagar:
-                # 1. Pega o que foi digitado e limpa imperfeições
-                id_limpo_input = str(id_apagar).strip().replace(".0", "")
-                
-                # 2. Busca na nossa tabela carregada
-                df_atend = st.session_state.atendimentos
-                
-                if not df_atend.empty and "id" in df_atend.columns:
-                    # Limpa a coluna da tabela para garantir uma comparação perfeita
-                    ids_tabela = df_atend["ID"].astype(str).str.replace(".0", "", regex=False).str.strip()
-                    
-                    # Encontra a linha exata
-                    linhas_encontradas = df_atend[ids_tabela == id_limpo_input]
-                    
-                    if not linhas_encontradas.empty:
-                        try:
-                            # 3. Pega a CHAVE PRIMÁRIA interna do banco
-                            id_real_banco = int(linhas_encontradas.iloc[0]["id"])
-                            
-                            # 4. Manda o tiro certeiro no banco usando a chave primária
-                            supabase.table("atendimentos").delete().eq("id", id_real_banco).execute()
-                            
-                            # Atualiza a tela
-                            st.cache_data.clear() 
-                            st.session_state.atendimentos = carregar_atendimentos()
-                            st.rerun() 
-                        except Exception as e:
-                            st.error(f"Erro ao tentar apagar na nuvem: {e}")
-                    else:
-                        st.error("❌ O ID digitado não foi encontrado na tabela.")
-            else:
-                st.warning("⚠️ Digite um ID antes de clicar.")
+        st.write("")
+        with st.container(border=True):
+            st.markdown("#### 🛡️ Usuários Autorizados")
+            for index, row in st.session_state.usuarios.iterrows():
+                col_info, col_del = st.columns([8, 1])
+                with col_info:
+                    st.markdown(f"**{row['Email']}**")
+                    st.caption(f"{row['Nome']} • {row['Funcao']}")
+                with col_del:
+                    if row["Email"] != st.session_state.usuario_logado["Email"]:
+                        if st.button("🗑️", key=f"del_user_{index}"):
+                            try:
+                                supabase.table("usuarios").delete().eq("email", row["Email"]).execute()
+                                st.cache_data.clear()
+                                st.session_state.usuarios = carregar_usuarios()
+                                st.rerun()
+                            except Exception as e:
+                                st.error(f"Erro ao excluir na nuvem: {e}")
+                st.divider()
 
 # ---------------------------------------------------------
 # 8. TELA 4: RELATÓRIOS ANALÍTICOS

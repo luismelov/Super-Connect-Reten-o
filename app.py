@@ -349,22 +349,19 @@ elif menu == "Dashboard":
     with col2:
         if st.button("🗑️ Apagar Registro", use_container_width=True):
             if id_apagar:
-                id_limpo = id_apagar.strip()
-                
-                # Tenta formatar como número para evitar conflito de tipo no Supabase
-                id_busca = int(id_limpo) if id_limpo.isdigit() else id_limpo
+                # Mantém o ID exatamente como texto, já que no Supabase a coluna é 'text'
+                id_limpo = str(id_apagar).strip() 
                 
                 try:
                     # Envia a ordem direta para a nuvem
-                    resposta = supabase.table("atendimentos").delete().eq("id_cliente", id_busca).execute()
+                    resposta = supabase.table("atendimentos").delete().eq("id_cliente", id_limpo).execute()
                     
-                    # O Supabase devolve a linha apagada se der certo. Se voltar vazio, algo bloqueou.
                     if len(resposta.data) > 0:
                         st.cache_data.clear() 
                         st.session_state.atendimentos = carregar_atendimentos()
                         st.rerun() 
                     else:
-                        st.error("⚠️ ID não encontrada.")
+                        st.error("⚠️ O registro não foi encontrado para exclusão.")
                 except Exception as e:
                     st.error(f"Erro ao tentar apagar na nuvem: {e}")
             else:

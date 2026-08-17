@@ -349,19 +349,14 @@ elif menu == "Dashboard":
     with col2:
         if st.button("🗑️ Apagar Registro", use_container_width=True):
             if id_apagar:
-                # Mantém o ID exatamente como texto, já que no Supabase a coluna é 'text'
-                id_limpo = str(id_apagar).strip() 
-                
                 try:
-                    # Envia a ordem direta para a nuvem
-                    resposta = supabase.table("atendimentos").delete().eq("id_cliente", id_limpo).execute()
+                    # 1. Apaga do banco de dados na nuvem exatamente como fizemos nos Colaboradores
+                    supabase.table("atendimentos").delete().eq("id_cliente", id_apagar.strip()).execute()
                     
-                    if len(resposta.data) > 0:
-                        st.cache_data.clear() 
-                        st.session_state.atendimentos = carregar_atendimentos()
-                        st.rerun() 
-                    else:
-                        st.error("⚠️ O registro não foi encontrado para exclusão.")
+                    # 2. Atualiza a memória instantaneamente e recarrega a tela
+                    st.cache_data.clear() 
+                    st.session_state.atendimentos = carregar_atendimentos()
+                    st.rerun() 
                 except Exception as e:
                     st.error(f"Erro ao tentar apagar na nuvem: {e}")
             else:

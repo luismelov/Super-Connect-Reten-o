@@ -349,18 +349,23 @@ elif menu == "Dashboard":
     with col2:
         if st.button("🗑️ Apagar Registro", use_container_width=True):
             if id_apagar:
-                try:
-                    resposta = supabase.table("atendimentos").delete().eq("id_cliente", id_apagar.strip()).execute()
-                    if len(resposta.data) > 0:
+                id_limpo = id_apagar.strip()
+                # Verifica se o ID existe na nossa tabela da tela primeiro
+                if id_limpo in st.session_state.atendimentos["ID"].astype(str).values:
+                    try:
+                        # Manda a ordem de exclusão cega para o banco
+                        supabase.table("atendimentos").delete().eq("id_cliente", id_limpo).execute()
+                        
+                        # Limpa a memória e recarrega a página imediatamente
                         st.cache_data.clear() 
                         st.session_state.atendimentos = carregar_atendimentos()
                         st.rerun() 
-                    else:
-                        st.error("❌ ID não encontrado no banco de dados.")
-                except Exception as e:
-                    st.error(f"Erro ao tentar apagar na nuvem: {e}")
+                    except Exception as e:
+                        st.error(f"Erro ao tentar apagar na nuvem: {e}")
+                else:
+                    st.error("❌ ID não encontrado na tabela.")
             else:
-                st.warning("⚠️ Digite um ID antes de clicar.")    
+                st.warning("⚠️ Digite um ID antes de clicar.")  
 
 # ---------------------------------------------------------
 # 7. TELA 3: COLABORADORES & ACESSOS 

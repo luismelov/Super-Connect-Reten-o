@@ -226,27 +226,29 @@ if menu == "Novo Atendimento":
                 st.form_submit_button("Limpar", use_container_width=True)
                 
             if submit:
-                # Trava de campos vazios
+                # 1. Trava de campos vazios
                 if (not cliente or not id_cliente or not cidade.strip() or not detalhes.strip() or 
                     motivo.startswith("Selecione") or colaborador.startswith("Selecione") or 
                     plano_cancelado.startswith("Selecione") or status_retencao.startswith("Selecione")):
                     st.warning("⚠️ Por favor, preencha todos os campos obrigatórios antes de submeter o atendimento.")
                 
-                # Trava de ID (Aceita apenas números)
+                # 2. Trava de ID (Aceita apenas números)
                 elif not id_cliente.strip().isdigit():
                     st.error("❌ O campo 'ID do Cliente' deve conter APENAS NÚMEROS. Verifique se você não inverteu o Nome com o ID.")
                 
                 else:
                     try:
                         valor_formatado = float(valor_perdido.replace(".", "").replace(",", "."))
+                        
+                        # Cálculo do Fuso Horário de Brasília (-3 horas do UTC global)
                         fuso_brasil = datetime.timedelta(hours=-3)
                         data_atual = (datetime.datetime.utcnow() + fuso_brasil).strftime("%d/%m/%Y %H:%M")
                         
                         dados_para_nuvem = {
                             "data": data_atual, 
-                            "cliente": cliente, 
+                            "cliente": cliente.strip().title(),  # HIGIENIZAÇÃO DO NOME
                             "id_cliente": int(id_cliente.strip()), 
-                            "cidade": cidade.title(),
+                            "cidade": cidade.strip().title(),    # HIGIENIZAÇÃO DA CIDADE
                             "plano_cancelado": plano_cancelado, 
                             "valor_perdido": valor_formatado, 
                             "status": status_retencao,
@@ -421,7 +423,7 @@ elif menu == "Colaboradores":
                         if not novo_nome.strip():
                             st.error("Por favor, preencha o nome do colaborador.")
                         else:
-                            dados_colab = { "nome": novo_nome.strip(), "cargo": novo_cargo, "status": novo_status }
+                            dados_colab = { "nome": novo_nome.strip().title(), "cargo": novo_cargo, "status": novo_status }
                             try:
                                 supabase.table("colaboradores").insert(dados_colab).execute()
                                 st.cache_data.clear()
@@ -463,7 +465,7 @@ elif menu == "Colaboradores":
                         with col_save:
                             if st.button("Salvar", key=f"save_{index}", use_container_width=True):
                                 if edit_nome.strip():
-                                    dados_update = { "nome": edit_nome.strip(), "cargo": edit_cargo, "status": edit_status }
+                                    dados_update = { "nome": edit_nome.strip().title(), "cargo": edit_cargo, "status": edit_status }
                                     try:
                                         supabase.table("colaboradores").update(dados_update).eq("id", row["ID"]).execute()
                                         st.cache_data.clear()
@@ -502,7 +504,7 @@ elif menu == "Colaboradores":
                 
                 if st.form_submit_button("Salvar Acesso"):
                     if novo_nome and novo_email and nova_senha:
-                        dados_usuario = { "nome": novo_nome, "email": novo_email, "senha": nova_senha, "funcao": nova_funcao }
+                        dados_usuario = { "nome": novo_nome.strip().title(), "email": novo_email, "senha": nova_senha, "funcao": nova_funcao }
                         try:
                             supabase.table("usuarios").insert(dados_usuario).execute()
                             st.cache_data.clear()

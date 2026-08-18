@@ -239,7 +239,8 @@ if menu == "Novo Atendimento":
                 else:
                     try:
                         valor_formatado = float(valor_perdido.replace(".", "").replace(",", "."))
-                        data_atual = datetime.datetime.now().strftime("%d/%m/%Y %H:%M")
+                        fuso_brasil = datetime.timedelta(hours=-3)
+                        data_atual = (datetime.datetime.utcnow() + fuso_brasil).strftime("%d/%m/%Y %H:%M")
                         
                         dados_para_nuvem = {
                             "data": data_atual, 

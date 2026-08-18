@@ -566,28 +566,28 @@ elif menu == "Relatórios":
             st.write("") 
             
             col_f1, col_f2, col_f3 = st.columns(3)
-            with col_f1:
-                df['Data_Real'] = pd.to_datetime(df['Data'], format="%d/%m/%Y %H:%M")
-                min_date = df['Data_Real'].dt.date.min()
-                max_date = df['Data_Real'].dt.date.max()
-                filtro_data = st.date_input("Período", value=[min_date, max_date], format="DD/MM/YYYY", key='f_data')
-                
-                lista_colaboradores = st.session_state.colaboradores['Nome'].tolist()
-                filtro_colaborador = st.multiselect("Colaborador Responsável", options=lista_colaboradores, key='f_colab')
-                
-            with col_f2:
-                filtro_status = st.multiselect("Status da Retenção", options=["Cancelamento Concluído", "Cliente Retido/Revertido"], key='f_status')
-                lista_planos_full = [
-                    "Internet", "Câmera", "Chip", "TV", "Internet+Câmera", "Internet+Chip", 
-                    "Internet+TV", "Câmera+Chip", "Câmera+TV", "Chip+TV", "Internet+Câmera+Chip", 
-                    "Internet+Câmera+TV", "Internet+Chip+TV", "Câmera+Chip+TV", "Internet+Câmera+Chip+TV"
-                ]
-                filtro_plano = st.multiselect("Plano Cancelado", options=lista_planos_full, key='f_plano')
-                filtro_tipo = st.multiselect("Tipo de Cancelamento", options=["Total", "Parcial", "Não Informado"], key='f_tipo')
-                
-            with col_f3:
-                filtro_motivo = st.multiselect("Motivo Principal", options=MOTIVOS, key='f_motivo')
-                filtro_cidade = st.multiselect("Cidade", options=df['Cidade'].unique(), key='f_cidade')
+        with col_f1:
+            df['Data_Real'] = pd.to_datetime(df['Data'], format="%d/%m/%Y %H:%M")
+            min_date = df['Data_Real'].dt.date.min()
+            max_date = df['Data_Real'].dt.date.max()
+            filtro_data = st.date_input("Período", value=[min_date, max_date], format="DD/MM/YYYY", key='f_data')
+            
+            lista_colaboradores = st.session_state.colaboradores['Nome'].tolist()
+            filtro_colaborador = st.multiselect("Colaborador Responsável", options=lista_colaboradores, key='f_colab', placeholder="Selecione...")
+            
+        with col_f2:
+            filtro_status = st.multiselect("Status da Retenção", options=["Cancelamento Concluído", "Cliente Retido/Revertido"], key='f_status', placeholder="Selecione...")
+            lista_planos_full = [
+                "Internet", "Câmera", "Chip", "TV", "Internet+Câmera", "Internet+Chip", 
+                "Internet+TV", "Câmera+Chip", "Câmera+TV", "Chip+TV", "Internet+Câmera+Chip", 
+                "Internet+Câmera+TV", "Internet+Chip+TV", "Câmera+Chip+TV", "Internet+Câmera+Chip+TV"
+            ]
+            filtro_plano = st.multiselect("Plano Cancelado", options=lista_planos_full, key='f_plano', placeholder="Selecione...")
+            filtro_tipo = st.multiselect("Tipo de Cancelamento", options=["Total", "Parcial", "Não Informado"], key='f_tipo', placeholder="Selecione...")
+            
+        with col_f3:
+            filtro_motivo = st.multiselect("Motivo Principal", options=MOTIVOS, key='f_motivo', placeholder="Selecione...")
+            filtro_cidade = st.multiselect("Cidade", options=df['Cidade'].unique(), key='f_cidade', placeholder="Selecione...")
         
         df_filtrado = df.copy()
         if len(filtro_data) == 2:
